@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate BG Remover Pro</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #0a0a23, #1a1a40, #2c2c6c);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        .container {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 2rem;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 800px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(90deg, #6a11cb, #2575fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .upload-container {
+            border: 3px dashed #6a11cb;
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            margin-bottom: 2rem;
+            cursor: pointer;
+        }
+
+        .upload-container.disabled {
+            border-color: #555;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: #6a11cb;
+            margin-bottom: 1rem;
+        }
+
+        .preview-container {
+            display: none;
+            margin: 2rem 0;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            border-radius: 10px;
+        }
+
+        .processing-bar {
+            height: 10px;
+            background: #333;
+            border-radius: 5px;
+            margin: 2rem 0;
+            overflow: hidden;
+            display: none;
+        }
+
+        .progress {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #6a11cb, #2575fc);
+            transition: width 3s ease;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #6a11cb, #2575fc);
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            display: none;
+            text-decoration: none;
+        }
+
+        .timer {
+            margin-top: 1rem;
+            font-size: 1.2rem;
+            color: #6a11cb;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Ultimate BG Remover Pro</h1>
+        <div class="upload-container" id="upload-container" onclick="handleUploadClick()">
+            <i class="fas fa-cloud-upload-alt upload-icon"></i>
+            <h2>Drag & Drop or Click to Upload</h2>
+            <input type="file" id="file-input" hidden accept="image/*">
+        </div>
+
+        <div class="processing-bar">
+            <div class="progress"></div>
+        </div>
+
+        <div class="timer" id="timer">Time elapsed: 0s</div>
+
+        <div class="preview-container">
+            <img src="#" alt="Preview" class="preview-image">
+        </div>
+
+        <a class="download-btn" id="download-btn">
+            <i class="fas fa-download"></i> Download Image
+        </a>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('file-input');
+        const uploadContainer = document.getElementById('upload-container');
+        const previewContainer = document.querySelector('.preview-container');
+        const previewImage = document.querySelector('.preview-image');
+        const processingBar = document.querySelector('.processing-bar');
+        const progress = document.querySelector('.progress');
+        const downloadBtn = document.getElementById('download-btn');
+        const timerElement = document.getElementById('timer');
+        let isProcessing = false;
+        let startTime = null;
+        let timerInterval = null;
+
+        function handleUploadClick() {
+            if (!isProcessing) {
+                fileInput.click();
+            }
+        }
+
+        function startTimer() {
+            startTime = Date.now();
+            timerInterval = setInterval(() => {
+                const elapsedTime = Math.floor((Date.now() - startTime) / 1000);
+                timerElement.textContent = `Time elapsed: ${elapsedTime}s`;
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+            timerElement.textContent = 'Time elapsed: 0s';
+        }
+
+        fileInput.addEventListener('change', async (e) => {
+            if (isProcessing) return;
+
+            const file = e.target.files[0];
+            if (!file || !file.type.startsWith('image/')) return;
+
+            isProcessing = true;
+            uploadContainer.classList.add('disabled');
+            processingBar.style.display = 'block';
+            progress.style.width = '50%'; // আগেই ৫০% দেখানো হবে
+            startTimer();
+
+            const formData = new FormData();
+            formData.append('image_file', file);
+            formData.append('size', 'auto'); // সাইজ অপ্টিমাইজ করা
+
+            try {
+                const response = await fetch('https://api.remove.bg/v1.0/removebg', {
+                    method: 'POST',
+                    headers: { 'X-Api-Key': 'kigFoVvHjWq6NdZK8bkJ9tXS' }, // Remove.bg API Key
+                    body: formData,
+                });
+
+                if (!response.ok) throw new Error('Error removing background');
+
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+
+                progress.style.width = '100%';
+                setTimeout(() => {
+                    processingBar.style.display = 'none';
+                    previewImage.src = url;
+                    previewContainer.style.display = 'block';
+                    downloadBtn.href = url;
+                    downloadBtn.download = 'no-bg.png';
+                    downloadBtn.style.display = 'inline-block';
+                    isProcessing = false;
+                    uploadContainer.classList.remove('disabled');
+                    stopTimer();
+                }, 500);
+
+            } catch (error) {
+                processingBar.style.display = 'none';
+                alert('Failed to remove background. Try again!');
+                console.error(error);
+                isProcessing = false;
+                uploadContainer.classList.remove('disabled');
+                stopTimer();
+            }
+        });
+    </script>
+</body>
+</html>
